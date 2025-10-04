@@ -1,14 +1,22 @@
 // lib/project_card.dart
-import 'dart:io'; // Untuk File
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:project/project_model.dart'; // Pastikan path ini benar
+import 'package:project/project_model.dart';
+
+enum ProjectMenuAction { viewDetails, delete }
 
 class ProjectCard extends StatelessWidget {
   final Project project;
+  final VoidCallback onDelete;
+  final VoidCallback onViewDetails;
+  final VoidCallback onTap; // Callback untuk tap
 
   const ProjectCard({
     super.key,
     required this.project,
+    required this.onDelete,
+    required this.onViewDetails,
+    required this.onTap, // onTap sekarang wajib
   });
 
   // Text Style
@@ -18,29 +26,24 @@ class ProjectCard extends StatelessWidget {
     color: Colors.white,
   );
   static const TextStyle _descriptionTextStyle = TextStyle(color: Colors.white70);
-  static const TextStyle _dateTextStyle = TextStyle(color: Colors.white70);
-
 
   @override
-  //Widget Card
   Widget build(BuildContext context) {
-    final cardBackgroundColor = Colors.grey[300];
-    // final imagePlaceholderColor = Colors.grey[400];
-    final detailsBackgroundColor = Colors.red[600];
-    const cardBorderRadius = BorderRadius.all(Radius.circular(20));
+    final detailsBackgroundColor = Colors.redAccent[200];
     const topBorderRadius = BorderRadius.vertical(top: Radius.circular(20));
     const bottomBorderRadius = BorderRadius.vertical(bottom: Radius.circular(20));
+    const cardBorderRadius = BorderRadius.all(Radius.circular(20));
 
-    //Widget Thumbnail
+    //Widget Thumbnail (Logika yang sudah Anda buat sebelumnya)
     Widget thumbnailWidget;
     if (project.thumbnailPathOrUrl != null) {
       if (project.thumbnailType == ThumbnailType.file) {
         thumbnailWidget = Image.file(
           File(project.thumbnailPathOrUrl!),
           height: 150,
-          width: double.infinity, // Agar mengisi lebar kontainer
+          width: double.infinity,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Container( // Placeholder jika error load file
+          errorBuilder: (context, error, stackTrace) => Container(
             height: 150,
             color: Colors.grey[400],
             child: const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.white54)),
@@ -66,78 +69,100 @@ class ProjectCard extends StatelessWidget {
               ),
             );
           },
-          errorBuilder: (context, error, stackTrace) => Container( // Placeholder jika error load URL
+          errorBuilder: (context, error, stackTrace) => Container(
             height: 150,
             color: Colors.grey[400],
             child: const Center(child: Icon(Icons.error_outline, size: 50, color: Colors.white54)),
           ),
         );
       } else {
-
-        // ThumbnailType.none atau tidak diset
-        thumbnailWidget = Container( // Placeholder default jika tidak ada thumbnail
+        thumbnailWidget = Container(
           height: 150,
           color: Colors.grey[400],
           child: const Center(child: Icon(Icons.image_outlined, size: 50, color: Colors.white54)),
         );
       }
     } else {
-      thumbnailWidget = Container( // Placeholder default jika path/URL null
+      thumbnailWidget = Container(
         height: 150,
         color: Colors.grey[400],
         child: const Center(child: Icon(Icons.image_not_supported_outlined, size: 50, color: Colors.white54)),
       );
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: cardBackgroundColor,
+    return Material( // Gunakan Material untuk efek InkWell yang benar di atas shadow
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap, // Panggil callback saat kartu ditekan
         borderRadius: cardBorderRadius,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: cardBorderRadius,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Widget Thumbnail
-          ClipRRect( // Untuk memastikan border radius diterapkan pada gambar
-            borderRadius: topBorderRadius,
-            child: thumbnailWidget,
-          ),
-          // Kontainer Detail
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: detailsBackgroundColor,
-              borderRadius: bottomBorderRadius,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(project.title, style: _titleTextStyle),
-                      const SizedBox(height: 4),
-                      Text(project.description, style: _descriptionTextStyle, maxLines: 2, overflow: TextOverflow.ellipsis), // Batasi deskripsi jika terlalu panjang
-                    ],
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Widget Thumbnail
+              ClipRRect(
+                borderRadius: topBorderRadius,
+                child: thumbnailWidget, // <-- KESALAHAN SEBELUMNYA DI SINI
+              ),
+              // Kontainer Detail
+              Container(
+                padding: const EdgeInsets.only(left: 12, top: 12, bottom: 12),
+                decoration: BoxDecoration(
+                  color: detailsBackgroundColor,
+                  borderRadius: bottomBorderRadius,
                 ),
-                const SizedBox(width: 8),
-                Text(project.date, style: _dateTextStyle),
-              ],
-            ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(project.title, style: _titleTextStyle),
+                          const SizedBox(height: 4),
+                          Text(project.description, style: _descriptionTextStyle, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<ProjectMenuAction>(
+                      onSelected: (ProjectMenuAction action) {
+                        if (action == ProjectMenuAction.viewDetails) {
+                          onViewDetails();
+                        } else if (action == ProjectMenuAction.delete) {
+                          onDelete();
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<ProjectMenuAction>>[
+                        const PopupMenuItem<ProjectMenuAction>(
+                          value: ProjectMenuAction.viewDetails,
+                          child: Text('Lihat Detail'),
+                        ),
+                        const PopupMenuItem<ProjectMenuAction>(
+                          value: ProjectMenuAction.delete,
+                          child: Text('Hapus'),
+                        ),
+                      ],
+                      icon: const Icon(Icons.more_vert, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
-

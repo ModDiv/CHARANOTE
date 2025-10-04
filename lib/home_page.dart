@@ -1,6 +1,8 @@
 // lib/home_page.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:project/character_page.dart'; //
+import 'package:project/detail_project.dart';
+import 'package:project/form_add_project.dart';
 import 'package:project/project_card.dart';
 import 'package:project/project_model.dart';
 
@@ -12,58 +14,61 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // ==========================================================
+  // PASTIKAN SEMUA KODE DI BAWAH INI ADA DI DALAM _HomePageState
+  // ==========================================================
+
+  // 1. VARIABEL STATE: Daftar proyek
   final List<Project> _projects = [
     // Data Dummy Awal
-    const Project(title: "Project Alpha", description: "Description of Alpha...", date: "14/09/2025"),
-    const Project(title: "Project Beta", description: "Details for Beta project...", date: "20/10/2025"),
+    const Project(
+      title: "Project Alpha",
+      description: "Description of Alpha...",
+      date: "14/09/2025",
+    ),
+    Project(
+      title: "Project Beta",
+      description: "Details for Beta project...",
+      date: "20/10/2025",
+      thumbnailPathOrUrl: "https://picsum.photos/seed/beta/400/200",
+      thumbnailType: ThumbnailType.url,
+    ),
   ];
 
-  // Controller untuk input field di dialog
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  // 2. FUNGSI HELPER: Untuk menambah proyek
+  void _navigateAndAddProject() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const FormAddProject()),
+    );
+    if (result != null && result is Project) {
+      setState(() {
+        _projects.add(result);
+      });
+    }
+  }
 
-  void _openAddProjectDialog() {
-    // Reset controller setiap kali dialog dibuka
-    _titleController.clear();
-    _descriptionController.clear();
-
+  // 3. FUNGSI HELPER: Untuk menghapus proyek
+  void _deleteProject(Project projectToDelete) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Add New Project"),
-          content: SingleChildScrollView( // Agar bisa di-scroll jika kontennya panjang
-            child: Column(
-
-              children: <Widget>[
-                TextField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Title'),
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  maxLines: 3, // Izinkan beberapa baris untuk deskripsi
-                  textInputAction: TextInputAction.done,
-                ),
-                // Tanggal akan dibuat otomatis, jadi tidak perlu input field
-              ],
-            ),
-          ),
-          actions: <Widget>[
+          title: const Text("Konfirmasi Hapus"),
+          content: Text("Apakah Anda yakin ingin menghapus '${projectToDelete.title}'?"),
+          actions: [
             TextButton(
-              child: const Text("Cancel"),
-              onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog
-              },
+              child: const Text("Batal"),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            ElevatedButton(
-              child: const Text("Add"),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text("Hapus"),
               onPressed: () {
-                _addNewProject();
-                Navigator.of(context).pop(); // Tutup dialog setelah menambahkan
+                setState(() {
+                  _projects.remove(projectToDelete);
+                });
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -72,40 +77,32 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _addNewProject() {
-    final String title = _titleController.text.trim();
-    final String description = _descriptionController.text.trim();
-
-    if (title.isNotEmpty) { // Pastikan judul tidak kosong
-      // Buat tanggal otomatis (format: dd/MM/yyyy)
-      final String currentDate = DateFormat('dd/MM/yyyy').format(DateTime.now());
-
-      final newProject = Project(
-        title: title.isNotEmpty ? title : "Untittled",
-        description: description.isNotEmpty ? description : "No description", // Default jika deskripsi kosong
-        date: currentDate,
-      );
-
+  // 4. FUNGSI HELPER: Untuk melihat detail & menangani edit
+  void _viewProjectDetails(Project project) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DetailProject(project: project),
+      ),
+    );
+    if (result != null && result is Project) {
       setState(() {
-        _projects.add(newProject); // Tambahkan proyek baru ke daftar
+        final index = _projects.indexWhere((p) => p.date == project.date && p.title == project.title);
+        if (index != -1) {
+          _projects[index] = result;
+        }
       });
     }
   }
 
-  void _openMenu() {
-    print("Menu button pressed");
-  }
-
-  void _openMoreOptions() {
-    print("More options button pressed");
-  }
-
-  @override
-  void dispose() {
-    // Penting untuk dispose controller ketika widget tidak lagi digunakan
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
+  // 5. FUNGSI HELPER: Untuk membuka halaman karakter
+  void _navigateToCharacterPage(Project project) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CharacterPage(),
+      ),
+    );
   }
 
   @override
@@ -115,33 +112,40 @@ class _HomePageState extends State<HomePage> {
         title: const Text("HOME"),
         leading: IconButton(
           icon: const Icon(Icons.menu),
-          onPressed: _openMenu,
+          onPressed: () { /* Logika untuk menu drawer */ },
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert),
-            onPressed: _openMoreOptions,
+            onPressed: () { /* Logika untuk opsi lainnya */ },
           ),
         ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _projects.length,
+        itemCount: _projects.length, // <- Ini sekarang akan valid
         itemBuilder: (context, index) {
-          final project = _projects[index];
-          // Urutkan proyek berdasarkan tanggal terbaru (opsional)
-          // Jika Anda ingin mengurutkan, lakukan sebelum return ProjectCard
-          // Misalnya: _projects.sort((a, b) => b.date.compareTo(a.date));
-          return ProjectCard(project: project);
+          final project = _projects[index]; // <- Ini sekarang akan valid
+          return ProjectCard(
+            project: project,
+            onTap: () {
+              _navigateToCharacterPage(project); // <- Ini sekarang akan valid
+            },
+            onDelete: () {
+              _deleteProject(project); // <- Ini sekarang akan valid
+            },
+            onViewDetails: () {
+              _viewProjectDetails(project); // <- Ini sekarang akan valid
+            },
+          );
         },
       ),
-      floatingActionButton: SizedBox(
-        width: 70,
-        height: 70,
-        child: FloatingActionButton(
-          onPressed: _openAddProjectDialog, // Panggil fungsi untuk membuka dialog
-          child: const Icon(Icons.add, size: 40),
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateAndAddProject, // <- Ini sekarang akan valid
+        backgroundColor: Colors.red[400],
+        foregroundColor: Colors.white,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, size: 40),
       ),
     );
   }

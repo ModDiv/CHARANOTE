@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Project List',
+      title: 'CHARANOTE',
       theme: ThemeData(
         primarySwatch: Colors.red,
         scaffoldBackgroundColor: Colors.white, // warna background
@@ -27,15 +27,6 @@ class MyApp extends StatelessWidget {
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
-        ),
-
-        //Button Add
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: Colors.red[400],
-          shape: const CircleBorder(
-
-          ),
-          foregroundColor: Colors.white,
         ),
       ),
       home: const HomePage(),
