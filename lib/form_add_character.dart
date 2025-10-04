@@ -1,9 +1,9 @@
 // lib/form_add_character.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:project/character_model.dart';
 
 class FormAddCharacter extends StatefulWidget {
-  // Karakter opsional untuk mode edit
   final Character? existingCharacter;
 
   const FormAddCharacter({
@@ -124,7 +124,7 @@ class _FormAddCharacterState extends State<FormAddCharacter> {
       );
 
       // Kirim kembali objek yang sudah dibuat/diperbarui
-      Navigator.pop(context, resultCharacter);
+      context.pop(resultCharacter);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

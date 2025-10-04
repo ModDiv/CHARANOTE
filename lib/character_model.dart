@@ -4,7 +4,7 @@ class Character {
   final String id;
   final String name;
   final String role;
-  String? imageUrl;
+  final String? imageUrl;
 
   // PASTIKAN SEMUA FIELD INI ADA
   final String? age;

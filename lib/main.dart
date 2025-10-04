@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project/home_page.dart';
+import 'package:project/app_router.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,14 +10,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'CHARANOTE',
+
       theme: ThemeData(
         primarySwatch: Colors.red,
-        scaffoldBackgroundColor: Colors.white, // warna background
+        scaffoldBackgroundColor: Colors.white,
 
-        //AppBar
+        // AppBar Theme
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.red[400],
           elevation: 0,
@@ -29,7 +30,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const HomePage(),
+      routerConfig: router,
     );
   }
 }

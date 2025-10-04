@@ -1,6 +1,9 @@
+// lib/project_model.dart
+
 enum ThumbnailType { none, file, url }
 
 class Project {
+  final String id;
   final String title;
   final String description;
   final String date;
@@ -8,6 +11,7 @@ class Project {
   final ThumbnailType thumbnailType;
 
   const Project({
+    required this.id,
     required this.title,
     required this.description,
     required this.date,

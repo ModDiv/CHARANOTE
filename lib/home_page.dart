@@ -1,8 +1,6 @@
 // lib/home_page.dart
 import 'package:flutter/material.dart';
-import 'package:project/character_page.dart'; //
-import 'package:project/detail_project.dart';
-import 'package:project/form_add_project.dart';
+import 'package:go_router/go_router.dart';
 import 'package:project/project_card.dart';
 import 'package:project/project_model.dart';
 
@@ -14,41 +12,39 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // ==========================================================
-  // PASTIKAN SEMUA KODE DI BAWAH INI ADA DI DALAM _HomePageState
-  // ==========================================================
 
-  // 1. VARIABEL STATE: Daftar proyek
   final List<Project> _projects = [
-    // Data Dummy Awal
     const Project(
+      id: "proj_alpha_01",
       title: "Project Alpha",
       description: "Description of Alpha...",
       date: "14/09/2025",
+      thumbnailPathOrUrl: "https://tse2.mm.bing.net/th/id/OIP.YR1yn7aFn7VSdupqnoOIMAHaEK?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3",
+      thumbnailType: ThumbnailType.url,
     ),
-    Project(
+    const Project(
+      id: "proj_beta_02",
       title: "Project Beta",
       description: "Details for Beta project...",
       date: "20/10/2025",
-      thumbnailPathOrUrl: "https://picsum.photos/seed/beta/400/200",
-      thumbnailType: ThumbnailType.url,
     ),
   ];
 
-  // 2. FUNGSI HELPER: Untuk menambah proyek
+  /// Navigasi ke halaman tambah proyek.
+  /// [ROUTE]: Memicu navigasi ke '/projects/add'.
   void _navigateAndAddProject() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const FormAddProject()),
-    );
-    if (result != null && result is Project) {
+    // `context.push` akan menampilkan halaman baru di atas halaman saat ini.
+    final result = await context.push<Project>('/projects/add');
+
+    // Jika pengguna menyimpan proyek dan kembali, `result` akan berisi data proyek baru.
+    if (result != null) {
       setState(() {
         _projects.add(result);
       });
     }
   }
 
-  // 3. FUNGSI HELPER: Untuk menghapus proyek
+  /// Menampilkan dialog konfirmasi untuk menghapus proyek.
   void _deleteProject(Project projectToDelete) {
     showDialog(
       context: context,
@@ -59,7 +55,8 @@ class _HomePageState extends State<HomePage> {
           actions: [
             TextButton(
               child: const Text("Batal"),
-              onPressed: () => Navigator.of(context).pop(),
+              // `context.pop()` digunakan untuk menutup dialog.
+              onPressed: () => context.pop(),
             ),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -68,7 +65,7 @@ class _HomePageState extends State<HomePage> {
                 setState(() {
                   _projects.remove(projectToDelete);
                 });
-                Navigator.of(context).pop();
+                context.pop(); // Tutup dialog setelah menghapus.
               },
             ),
           ],
@@ -77,17 +74,18 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 4. FUNGSI HELPER: Untuk melihat detail & menangani edit
+  /// Navigasi ke halaman detail proyek.
+  /// [ROUTE]: Memicu navigasi ke '/projects/:projectId' (misal: '/projects/proj_alpha_01').
   void _viewProjectDetails(Project project) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DetailProject(project: project),
-      ),
+    final result = await context.push<Project>(
+      '/projects/${project.id}',
+      extra: project, // menyimpan data2 project
     );
-    if (result != null && result is Project) {
+
+    // isi detail baru tersimpan
+    if (result != null) {
       setState(() {
-        final index = _projects.indexWhere((p) => p.date == project.date && p.title == project.title);
+        final index = _projects.indexWhere((p) => p.id == result.id);
         if (index != -1) {
           _projects[index] = result;
         }
@@ -95,53 +93,38 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // 5. FUNGSI HELPER: Untuk membuka halaman karakter
+  /// Navigasi ke halaman daftar karakter untuk sebuah proyek.
+  /// [ROUTE]: Memicu navigasi ke '/projects/:projectId/characters'.
   void _navigateToCharacterPage(Project project) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const CharacterPage(),
-      ),
-    );
+    context.push('/projects/${project.id}/characters');
   }
 
+  // --- UI (WIDGET BUILD) ---
+
+  /// UI HomePage.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("HOME"),
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () { /* Logika untuk menu drawer */ },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () { /* Logika untuk opsi lainnya */ },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text("HOME")),
+
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _projects.length, // <- Ini sekarang akan valid
+        itemCount: _projects.length,
         itemBuilder: (context, index) {
-          final project = _projects[index]; // <- Ini sekarang akan valid
+          final project = _projects[index];
+
           return ProjectCard(
             project: project,
-            onTap: () {
-              _navigateToCharacterPage(project); // <- Ini sekarang akan valid
-            },
-            onDelete: () {
-              _deleteProject(project); // <- Ini sekarang akan valid
-            },
-            onViewDetails: () {
-              _viewProjectDetails(project); // <- Ini sekarang akan valid
-            },
+            onTap: () => _navigateToCharacterPage(project),
+            onDelete: () => _deleteProject(project),
+            onViewDetails: () => _viewProjectDetails(project),
           );
         },
       ),
+
+      //Button add project
       floatingActionButton: FloatingActionButton(
-        onPressed: _navigateAndAddProject, // <- Ini sekarang akan valid
+        onPressed: _navigateAndAddProject,
         backgroundColor: Colors.red[400],
         foregroundColor: Colors.white,
         shape: const CircleBorder(),

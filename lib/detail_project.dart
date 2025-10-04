@@ -1,7 +1,7 @@
 // lib/detail_project.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:project/form_add_project.dart';
+import 'package:go_router/go_router.dart';
 import 'package:project/project_model.dart';
 
 class DetailProject extends StatelessWidget {
@@ -10,45 +10,41 @@ class DetailProject extends StatelessWidget {
   const DetailProject({super.key, required this.project});
 
   void _navigateToEdit(BuildContext context) async {
-    final updatedProject = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FormAddProject(existingProject: project),
-      ),
+    final updatedProject = await context.push<Project>(
+      '/projects/${project.id}/edit',
+      extra: project,
     );
-
     if (updatedProject != null) {
-      Navigator.pop(context, updatedProject);
+      context.pop(updatedProject);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Widget untuk menampilkan thumbnail (Logika ini sudah benar)
     Widget thumbnailWidget;
     if (project.thumbnailPathOrUrl != null) {
-      if (project.thumbnailType == ThumbnailType.file) {
+      if (project.thumbnailType == ThumbnailType.file && project.thumbnailPathOrUrl!.isNotEmpty) {
         thumbnailWidget = Image.file(
           File(project.thumbnailPathOrUrl!),
           width: double.infinity,
           height: 250,
           fit: BoxFit.cover,
-          errorBuilder: (ctx, err, st) => const Center(child: Icon(Icons.broken_image, size: 100)),
+          errorBuilder: (ctx, err, st) => const Center(child: Icon(Icons.broken_image, size: 100, color: Colors.grey)),
         );
-      } else if (project.thumbnailType == ThumbnailType.url) {
+      } else if (project.thumbnailType == ThumbnailType.url && project.thumbnailPathOrUrl!.isNotEmpty) {
         thumbnailWidget = Image.network(
           project.thumbnailPathOrUrl!,
           width: double.infinity,
           height: 250,
           fit: BoxFit.cover,
           loadingBuilder: (ctx, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
-          errorBuilder: (ctx, err, st) => const Center(child: Icon(Icons.error_outline, size: 100)),
+          errorBuilder: (ctx, err, st) => const Center(child: Icon(Icons.error_outline, size: 100, color: Colors.grey)),
         );
       } else {
-        thumbnailWidget = const Center(child: Icon(Icons.image_not_supported, size: 100));
+        thumbnailWidget = const Center(child: Icon(Icons.image, size: 100, color: Colors.grey));
       }
     } else {
-      thumbnailWidget = const Center(child: Icon(Icons.image, size: 100));
+      thumbnailWidget = const Center(child: Icon(Icons.image, size: 100, color: Colors.grey));
     }
 
     return Scaffold(
@@ -56,10 +52,8 @@ class DetailProject extends StatelessWidget {
         title: Text(project.title),
       ),
       body: SingleChildScrollView(
-        // ===== PERUBAHAN UTAMA ADA DI SINI =====
-        // Kita akan menempatkan semua widget langsung di dalam satu Column.
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // Ratakan semua teks ke kiri
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Thumbnail
             Container(
@@ -69,9 +63,9 @@ class DetailProject extends StatelessWidget {
               child: thumbnailWidget,
             ),
 
-            const SizedBox(height: 24), // Beri jarak dari thumbnail ke konten
+            const SizedBox(height: 24),
 
-            // 2. Title Section (Langsung di dalam Column utama)
+            // 2. Title Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
@@ -79,11 +73,7 @@ class DetailProject extends StatelessWidget {
                 children: [
                   const Text(
                     "Title",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -96,7 +86,7 @@ class DetailProject extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // 3. Description Section (Langsung di dalam Column utama)
+            // 3. Description Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
@@ -104,16 +94,12 @@ class DetailProject extends StatelessWidget {
                 children: [
                   const Text(
                     "Description",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     project.description,
-                    style: const TextStyle(fontSize: 16, height: 1.5), // Beri sedikit jarak antar baris
+                    style: const TextStyle(fontSize: 16, height: 1.5),
                   ),
                 ],
               ),
@@ -121,20 +107,40 @@ class DetailProject extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // 4. Edit Button (Langsung di dalam Column utama)
+            // ==================== BAGIAN TOMBOL-TOMBOL UTAMA ====================
+
+            // 5. Tombol View Characters (Aksi sekunder, dipindahkan ke bawah)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.people_alt_outlined),
+                label: const Text("View Characters", style: TextStyle(fontWeight: FontWeight.bold)),
+                // MENGGUNAKAN STYLE YANG SAMA DENGAN TOMBOL EDIT
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.red[300],
+                  minimumSize: const Size(double.infinity, 50),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () {
+                  context.push('/projects/${project.id}/characters');
+                },
+              ),
+            ),
+
+            const SizedBox(height: 12), // Beri jarak antar tombol
+
+            // 4. Tombol Edit (Aksi primer)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Center(
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.edit),
-                  label: const Text(
-                    "Edit Project",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  label: const Text("Edit Project", style: TextStyle(fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[300], // Sesuaikan warna agar cocok
+                    backgroundColor: Colors.red[300],
                     foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 50), // Buat tombol lebih lebar
+                    minimumSize: const Size(double.infinity, 50),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () {
@@ -143,7 +149,12 @@ class DetailProject extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 40), // Beri jarak di bagian bawah
+
+
+
+
+
+            const SizedBox(height: 40), // Jarak di bagian bawah halaman
           ],
         ),
       ),
